@@ -2,6 +2,7 @@ import plistlib
 import pprint
 import argparse
 import os
+import math
 
 ''' Get a value from a plist-dict by it's dot separated path'''
 def getVal(pl, path):
@@ -159,6 +160,25 @@ def validatePath(path):
   if extension != '.plist':
     raise ValueError('Please only provide .plist files as A or B!')
 
+def printDiffs(diffs):
+  keys = [key for key in diffs]
+  keys.sort(key=lambda x: len(x), reverse=True)
+  seplen = len(keys[0]) + 5 + 5 # 5x -, 5x -
+  seplen = seplen if seplen % 2 == 0 else seplen + 1 # make even
+
+  for key in diffs:
+    dashes = int((seplen - len(key)) / 2)
+    print(f'{"-" * dashes}[{key}]{"-" * dashes}')
+    cdiffs = diffs[key]
+    for i in range(0, len(cdiffs)):
+      pair = cdiffs[i]
+      print('A: ', end='')
+      pprint.pprint(pair['a'])
+      print('B: ', end='')
+      pprint.pprint(pair['b'])
+      if i != len(cdiffs) - 1:
+        print()
+
 ''' Main entry-point of the program '''
 def main():
   # Parse required and optional arguments
@@ -180,7 +200,7 @@ def main():
   with open(args.a, 'rb') as a:
     with open(args.b, 'rb') as b:
       diffs = diffPlists(plistlib.load(a), plistlib.load(b))
-      pprint.pprint(diffs)
+      printDiffs(diffs)
 
 if __name__ == '__main__':
   main()
