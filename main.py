@@ -19,7 +19,6 @@ def getVal(pl, path):
 
 ''' Make diff result list entry '''
 def mkEntry(a, b, path, isrev, res):
-  # Create empty array
   if not path in res:
     res[path] = []
 
@@ -161,9 +160,14 @@ def validatePath(path):
     raise ValueError('Please only provide .plist files as A or B!')
 
 def printDiffs(diffs):
+  # Nothing to print here
+  if len(diffs) == 0:
+    return
+
+  # Find longest key length, seperator has to have at least some dashes
   keys = [key for key in diffs]
   keys.sort(key=lambda x: len(x), reverse=True)
-  seplen = len(keys[0]) + 5 + 5 # 5x -, 5x -
+  seplen = len(keys[0]) + 4
   seplen = seplen if seplen % 2 == 0 else seplen + 1 # make even
 
   for key in diffs:
@@ -178,6 +182,35 @@ def printDiffs(diffs):
       pprint.pprint(pair['b'])
       if i != len(cdiffs) - 1:
         print()
+
+def isScalar(v):
+  return not (isinstance(v, dict) or isinstance(v, list))
+
+def groupParents(diffs):
+  newdiffs = {}
+  for key in diffs:
+    value = diffs[key]
+    paths = key.split('.')
+    parent = '.'.join(paths[:-1])
+    member = paths[-1]
+
+    # Get the first value
+    v = value[0]
+
+    # Already has multiple values or is not scalar
+    if len(value) > 1 or not isScalar(v['a']) or not isScalar(v['b']):
+      newdiffs[key] = value
+      continue
+
+    # Add empty entry for this parent
+    if parent not in newdiffs:
+      newdiffs[parent] = [{ 'a': {}, 'b': {} }]
+
+    # Populate
+    newdiffs[parent][0]['a'][member] = v['a']
+    newdiffs[parent][0]['b'][member] = v['b']
+
+  return newdiffs
 
 ''' Main entry-point of the program '''
 def main():
@@ -200,7 +233,8 @@ def main():
   with open(args.a, 'rb') as a:
     with open(args.b, 'rb') as b:
       diffs = diffPlists(plistlib.load(a), plistlib.load(b))
-      printDiffs(diffs)
+      printDiffs(groupParents(diffs))
+      # printDiffs(diffs)
 
 if __name__ == '__main__':
   main()
