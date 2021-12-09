@@ -124,7 +124,8 @@ def diffList(b, lst, path, isrev, res):
     # Not existing exactly like this in the other list
     if not exists:
       if isdict:
-        mkEntry(i, findMostSimilar(i, other), path, isrev, res)
+        similar = findMostSimilar(i, other)
+        mkEntry(i, similar if similar is not None else '<no entry>', path, isrev, res)
       else:
         mkEntry(i, '<no list partner>', path, isrev, res)
 
@@ -132,7 +133,7 @@ def diffList(b, lst, path, isrev, res):
 def diffScalar(b, v, path, isrev, res):
   other = getVal(b, path)
   if v != other:
-    mkEntry(v, other, path, isrev, res)
+    mkEntry(v, other if other is not None else '<no entry>', path, isrev, res)
 
 ''' Diff a key recursively (with all subkeys) '''
 def diffKey(a, b, k, path, isrev, res):
