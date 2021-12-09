@@ -165,7 +165,13 @@ def visualPrint(v):
   if isinstance(v, dict):
     print('{')
     for key in v:
-      print(f'  {key}: {v[key]}')
+      val = v[key]
+
+      # Transform bytes to hex
+      if isinstance(val, bytes):
+        val = val.hex().upper()
+
+      print(f'  {key}: {val}')
     print('}')
   else:
     print(v)
