@@ -1,8 +1,7 @@
 import plistlib
 import pprint
-
-# TODO: Add CLI parameters for a, b, ignore-disabled
-# TODO: Add proper ASCII representation
+import argparse
+import os
 
 ''' Get a value from a plist-dict by it's dot separated path'''
 def getVal(pl, path):
@@ -151,12 +150,37 @@ def diffKey(a, b, k, path, isrev, res):
     else:
       diffScalar(b, val, path, isrev, res)
 
-# Static for now, args later
-fA='/Users/lenovo/Desktop/MacOS-XPS-9700-OpenCore/EFI/OC/config.plist'
-fB='/Users/lenovo/Desktop/Misc/MacOS-XPS-9700-OpenCore/EFI/OC/config.plist'
+''' Validate a file path to be a valid PLIST '''
+def validatePath(path):
+  name, extension = os.path.splitext(path)
+  if not os.path.isfile(path):
+    raise ValueError(f'The path "{path}" does not exist!')
 
-# Open both files and invoke diffing
-with open(fA, 'rb') as a:
-  with open(fB, 'rb') as b:
-    diffs = diffPlists(plistlib.load(a), plistlib.load(b))
-    pprint.pprint(diffs)
+  if extension != '.plist':
+    raise ValueError('Please only provide .plist files as A or B!')
+
+''' Main entry-point of the program '''
+def main():
+  # Parse required and optional arguments
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+    '-a', dest='a', help='Absolute path to file A',
+    required=True
+  )
+  parser.add_argument(
+    '-b', dest='b', help='Absolute path to file B',
+    required=True
+  )
+  args = parser.parse_args()
+
+  validatePath(args.a)
+  validatePath(args.b)
+
+  # Open both files and invoke diffing
+  with open(args.a, 'rb') as a:
+    with open(args.b, 'rb') as b:
+      diffs = diffPlists(plistlib.load(a), plistlib.load(b))
+      pprint.pprint(diffs)
+
+if __name__ == '__main__':
+  main()
