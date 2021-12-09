@@ -159,6 +159,15 @@ def validatePath(path):
   if extension != '.plist':
     raise ValueError('Please only provide .plist files as A or B!')
 
+def visualPrint(v):
+  if isinstance(v, dict):
+    print('{')
+    for key in v:
+      print(f'  {key}: {v[key]}')
+    print('}')
+  else:
+    print(v)
+
 def printDiffs(diffs):
   # Nothing to print here
   if len(diffs) == 0:
@@ -169,17 +178,17 @@ def printDiffs(diffs):
   keys.sort(key=lambda x: len(x), reverse=True)
   seplen = len(keys[0]) + 4
   seplen = seplen if seplen % 2 == 0 else seplen + 1 # make even
-
+  
   for key in diffs:
     dashes = int((seplen - len(key)) / 2)
-    print(f'{"-" * dashes}[{key}]{"-" * dashes}')
+    print(f'\n{"-" * dashes}[{key}]{"-" * dashes}')
     cdiffs = diffs[key]
     for i in range(0, len(cdiffs)):
       pair = cdiffs[i]
       print('A: ', end='')
-      pprint.pprint(pair['a'])
+      visualPrint(pair['a'])
       print('B: ', end='')
-      pprint.pprint(pair['b'])
+      visualPrint(pair['b'])
       if i != len(cdiffs) - 1:
         print()
 
