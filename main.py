@@ -159,6 +159,7 @@ def validatePath(path):
   if extension != '.plist':
     raise ValueError('Please only provide .plist files as A or B!')
 
+""" Print structures optimized for readability """
 def visualPrint(v):
   if isinstance(v, dict):
     print('{')
@@ -168,6 +169,7 @@ def visualPrint(v):
   else:
     print(v)
 
+""" Visualize differences """
 def printDiffs(diffs):
   # Nothing to print here
   if len(diffs) == 0:
@@ -178,10 +180,14 @@ def printDiffs(diffs):
   keys.sort(key=lambda x: len(x), reverse=True)
   seplen = len(keys[0]) + 4
   seplen = seplen if seplen % 2 == 0 else seplen + 1 # make even
-  
+
+  # Iterate individual paths 
   for key in diffs:
+    # Print uniform amount of dashes
     dashes = int((seplen - len(key)) / 2)
     print(f'\n{"-" * dashes}[{key}]{"-" * dashes}')
+
+    # Print differing items for this key
     cdiffs = diffs[key]
     for i in range(0, len(cdiffs)):
       pair = cdiffs[i]
@@ -189,12 +195,16 @@ def printDiffs(diffs):
       visualPrint(pair['a'])
       print('B: ', end='')
       visualPrint(pair['b'])
+
+      # Separate using newlines
       if i != len(cdiffs) - 1:
         print()
 
+""" Check whether or not a value is scalar """
 def isScalar(v):
   return not (isinstance(v, dict) or isinstance(v, list))
 
+""" Group scalars with the same parent into dicts """
 def groupParents(diffs):
   newdiffs = {}
   for key in diffs:
@@ -243,7 +253,6 @@ def main():
     with open(args.b, 'rb') as b:
       diffs = diffPlists(plistlib.load(a), plistlib.load(b))
       printDiffs(groupParents(diffs))
-      # printDiffs(diffs)
 
 if __name__ == '__main__':
   main()
