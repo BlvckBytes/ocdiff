@@ -1,8 +1,6 @@
 import plistlib
-import pprint
 import argparse
 import os
-import math
 
 ''' Get a value from a plist-dict by it's dot separated path'''
 def getVal(pl, path):
