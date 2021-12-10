@@ -16,14 +16,14 @@ def getVal(pl, path):
   return curr
 
 ''' Make diff result list entry '''
-def mkEntry(a, b, path, isrev, res):
+def mkEntry(a, b, idx, path, isrev, res):
   if not path in res:
     res[path] = []
 
   targ = res[path]
 
   # Generate new entry
-  entry = { 'a': a, 'b': b } if not isrev else { 'a': b, 'b': a }
+  entry = { 'a': a, 'b': b, 'sequence': idx } if not isrev else { 'a': b, 'b': a, 'sequence': idx }
 
   # Don't append duplicates
   for i in targ:
@@ -43,11 +43,14 @@ def dictEq(a, b):
 def diffPlists(a, b):
   res = {}
   # Diff a against b
-  for key in a.keys():
-    diffKey(a, b, key, key, False, res)
+  for idx, it in enumerate(a.items()):
+    key = it[0]
+    diffKey(a, b, key, idx, key, False, res)
+
   # Diff b against a
-  for key in a.keys():
-    diffKey(b, a, key, key, True, res)
+  for idx, it in enumerate(b.items()):
+    key = it[0]
+    diffKey(b, a, key, idx, key, True, res)
   return res
 
 ''' Diff only known and unique-ifying keys, return a score of matched values '''
@@ -83,12 +86,12 @@ def findMostSimilar(a, lst):
   return hits[0][0]
 
 ''' Diff a list by diffing it's items'''
-def diffList(b, lst, path, isrev, res):
+def diffList(b, lst, idx, path, isrev, res):
   pass
   other = getVal(b, path)
   # Not a list, comparison impossible
   if not isinstance(other, list):
-    mkEntry(lst, '<not a list>', path, isrev, res)
+    mkEntry(lst, '<not a list>', idx, path, isrev, res)
     return
 
   for i in lst:
@@ -123,31 +126,31 @@ def diffList(b, lst, path, isrev, res):
     if not exists:
       if isdict:
         similar = findMostSimilar(i, other)
-        mkEntry(i, similar if similar is not None else '<no entry>', path, isrev, res)
+        mkEntry(i, similar if similar is not None else '<no entry>', idx, path, isrev, res)
       else:
-        mkEntry(i, '<no list partner>', path, isrev, res)
+        mkEntry(i, '<no list partner>', idx, path, isrev, res)
 
 ''' Diff a scalar value (content and type is equal)'''
-def diffScalar(b, v, path, isrev, res):
+def diffScalar(b, v, idx, path, isrev, res):
   other = getVal(b, path)
   if v != other:
-    mkEntry(v, other if other is not None else '<no entry>', path, isrev, res)
+    mkEntry(v, other if other is not None else '<no entry>', idx, path, isrev, res)
 
 ''' Diff a key recursively (with all subkeys) '''
-def diffKey(a, b, k, path, isrev, res):
+def diffKey(a, b, k, idx, path, isrev, res):
   val = a[k]
 
   # Another key to a dict
   if isinstance(val, dict):
     for key in val:
-      diffKey(val, b, key, f'{path}.{key}', isrev, res)
+      diffKey(val, b, key, idx, f'{path}.{key}', isrev, res)
   else:
     # Diff list items
     if isinstance(val, list):
-      diffList(b, val, path, isrev, res)
+      diffList(b, val, idx, path, isrev, res)
     # Diff scalar value
     else:
-      diffScalar(b, val, path, isrev, res)
+      diffScalar(b, val, idx, path, isrev, res)
 
 ''' Validate a file path to be a valid PLIST '''
 def validatePath(path):
@@ -186,8 +189,8 @@ def printDiffs(diffs):
   seplen = len(keys[0]) + 4
   seplen = seplen if seplen % 2 == 0 else seplen + 1 # make even
 
-  # Iterate individual paths 
-  for key in diffs:
+  # Iterate individual paths, sort by their sequence appearing in the file
+  for key in sorted(diffs, key=lambda x: max(cdiff['sequence'] for cdiff in diffs[x])):
     # Print uniform amount of dashes
     dashes = int((seplen - len(key)) / 2)
     print(f'\n{"-" * dashes}[{key}]{"-" * dashes}')
@@ -228,11 +231,15 @@ def groupParents(diffs):
 
     # Add empty entry for this parent
     if parent not in newdiffs:
-      newdiffs[parent] = [{ 'a': {}, 'b': {} }]
+      newdiffs[parent] = [{ 'a': {}, 'b': {}, 'sequence': 0 }]
 
     # Populate
     newdiffs[parent][0]['a'][member] = v['a']
     newdiffs[parent][0]['b'][member] = v['b']
+
+    # Keep sequence number at highest value of group
+    if 'sequence' not in newdiffs[parent][0] or newdiffs[parent][0]['sequence'] < v['sequence']:
+      newdiffs[parent][0]['sequence'] = v['sequence']
 
   return newdiffs
 
