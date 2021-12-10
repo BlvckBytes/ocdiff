@@ -264,6 +264,8 @@ def main():
   with open(args.a, 'rb') as a:
     with open(args.b, 'rb') as b:
       diffs = diffPlists(plistlib.load(a), plistlib.load(b))
+      print(f'File A: {args.a}')
+      print(f'File B: {args.b}')
       printDiffs(groupParents(diffs))
 
 if __name__ == '__main__':
